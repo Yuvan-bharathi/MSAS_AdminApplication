@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-300: #86efac;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-900: #14532d;
+  
+  --color-accent: #f59e0b;
+  --color-info: #0ea5e9;
+  --color-danger: #ef4444;
+  
+  --color-bg-base: #f8fafc;
+  --color-card-bg: #ffffff;
+  
+  --color-text-primary: #1f2937;
+  --color-text-secondary: #6b7280;
+  
+  --color-border-subtle: #e5e7eb;
+
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-base text-text-primary antialiased font-sans selection:bg-brand-500 selection:text-white;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white border border-border-subtle shadow-sm rounded-2xl;
+  }
+  .glass-dark {
+    @apply bg-white border border-border-subtle shadow-sm rounded-2xl text-text-primary;
+  }
+  .glass-card {
+    @apply bg-white border border-border-subtle shadow-sm rounded-2xl;
+  }
+  .glass-button {
+    @apply bg-white hover:bg-slate-50 border border-border-subtle shadow-sm transition-all duration-300 rounded-xl;
+  }
+  .search-input {
+    color: var(--color-text-primary);
+  }
+  .search-input::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 1;
+  }
+}
