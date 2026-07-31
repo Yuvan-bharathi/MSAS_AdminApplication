@@ -11,6 +11,7 @@ import { supabase } from '../../utils/supabase';
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
+import { appCache, clearCache } from '../../utils/cache';
 
 const StatusDropdown = ({ status, orderId, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,7 +59,7 @@ const StatusDropdown = ({ status, orderId, onChange }) => {
   );
 };
 
-export default function RecentOrdersTable({ clientId, limit = 5, title = "Recent Orders", showViewAll = true }) {
+export default function RecentOrdersTable({ clientId, title = "Recent Orders", limit, showViewAll = true, refreshKey = 0 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const { role } = useAuth(); // Fetch user role to conditionally show delete button
@@ -67,6 +68,17 @@ export default function RecentOrdersTable({ clientId, limit = 5, title = "Recent
   useEffect(() => {
     async function fetchOrders() {
       if (!clientId) return;
+
+      const cacheKey = `orders_${clientId}_${limit || 'all'}`;
+
+      if (refreshKey > 0) {
+        clearCache('orders_');
+      } else if (appCache.has(cacheKey)) {
+        setData(appCache.get(cacheKey));
+        setLoading(false);
+        return; // Early return to prevent background fetch
+      }
+
       try {
         let query = supabase
           .from('orders')
@@ -102,15 +114,16 @@ export default function RecentOrdersTable({ clientId, limit = 5, title = "Recent
           status: order.orderStatus
         }));
 
+        appCache.set(cacheKey, formattedData);
         setData(formattedData);
-      } catch (error) {
-        console.error('Error fetching recent orders:', error);
+      } catch (err) {
+        console.error('Error fetching recent orders:', err);
       } finally {
         setLoading(false);
       }
     }
     fetchOrders();
-  }, [clientId, limit]);
+  }, [clientId, limit, refreshKey]);
 
   const handleStatusChange = async (orderId, newStatus) => {
     setData(prev => prev.map(order => 
@@ -124,6 +137,8 @@ export default function RecentOrdersTable({ clientId, limit = 5, title = "Recent
         .eq('orderId', orderId);
         
       if (error) throw error;
+      
+      clearCache('orders_');
     } catch (err) {
       console.error('Error updating status:', err);
     }
@@ -147,6 +162,7 @@ export default function RecentOrdersTable({ clientId, limit = 5, title = "Recent
       
       // Remove from UI
       setData(prev => prev.filter(order => order.id !== orderId));
+      clearCache('orders_');
     } catch (err) {
       console.error('Error soft deleting order:', err);
     }

@@ -11,6 +11,7 @@ import UsersList from './pages/Users/UsersList';
 import PendingReminder from './pages/PendingReminder/PendingReminder';
 import Settings from './pages/Settings/Settings';
 import Trash from './pages/Trash/Trash';
+import Menu from './pages/Menu/Menu';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
               <Route path="payments" element={<Payments />} />
+              <Route path="menu" element={<Menu />} />
               <Route path="users" element={<UsersList />} />
               <Route path="users/:userId" element={<UserDetails />} />
               <Route path="reminders" element={<PendingReminder />} />

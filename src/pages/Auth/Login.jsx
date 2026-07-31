@@ -1,14 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,11 +31,9 @@ export default function Login() {
 
       if (error) throw error;
       
-      // Navigate to dashboard on success
-      navigate('/');
+      // Do not navigate immediately, wait for AuthContext to fetch profile and trigger useEffect.
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -77,7 +83,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition-all shadow-sm shadow-brand-500/30 disabled:opacity-70 flex justify-center items-center"
+            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition-all shadow-sm shadow-brand-500/30 disabled:opacity-70 flex justify-center items-center cursor-pointer"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

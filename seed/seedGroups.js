@@ -4,21 +4,17 @@ import { generateId, getRandomElement, getRandomInt } from './utils.js';
 export async function seedGroups(branches) {
   console.log('Seeding WhatsApp Groups...');
   
-  const groups = [];
-  
-  for (let i = 1; i <= 40; i++) {
-    const branch = getRandomElement(branches);
-    
-    groups.push({
-      whatsAppGroupId: generateId('GRP', i),
+  const groups = branches.map((branch, i) => {
+    return {
+      whatsAppGroupId: generateId('GRP', i + 1),
       clientId: branch.clientId,
       branchId: branch.branchId,
-      groupName: `${branch.branchName.substring(0, 15)} Updates`,
+      groupName: `${branch.branchName} Updates`,
       groupDescription: 'Official WhatsApp group for daily menus and updates.',
       groupType: getRandomElement(['Broadcast', 'Interactive']),
       isActive: true,
-    });
-  }
+    };
+  });
 
   const { data, error } = await supabase.from('whatsAppGroups').upsert(groups).select();
   

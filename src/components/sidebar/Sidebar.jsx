@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, CreditCard, Clock, Users, Settings, LogOut, Trash2 } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, CreditCard, Clock, Users, Settings, LogOut, Trash2, Utensils } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Menu', href: '/menu', icon: Utensils },
   { name: 'Orders', href: '/orders', icon: ShoppingBag },
   { name: 'Payments', href: '/payments', icon: CreditCard },
+
   { name: 'Pending Reminder', href: '/reminders', icon: Clock },
   { name: 'Users', href: '/users', icon: Users },
   { name: 'Trash', href: '/trash', icon: Trash2 },
@@ -46,7 +48,7 @@ export default function Sidebar() {
               ))}
             </ul>
           </li>
-          <li className="mt-auto">
+          {/* <li className="mt-auto">
             <button
               onClick={signOut}
               className="w-full group -mx-2 flex gap-x-3 rounded-xl p-3 text-sm font-semibold leading-6 text-text-secondary hover:bg-slate-50 hover:text-text-primary transition-all duration-300"
@@ -54,7 +56,7 @@ export default function Sidebar() {
               <LogOut className="h-6 w-6 shrink-0" aria-hidden="true" />
               Logout
             </button>
-          </li>
+          </li> */}
         </ul>
       </nav>
     </div>

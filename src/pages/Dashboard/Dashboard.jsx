@@ -118,8 +118,7 @@ export default function Dashboard() {
           <DistributionChart />
         </div>
       </div>
-
-      <RecentOrdersTable clientId={CLIENT_ID} />
+      <RecentOrdersTable clientId={CLIENT_ID} limit={10} />
     </div>
   );
 }
