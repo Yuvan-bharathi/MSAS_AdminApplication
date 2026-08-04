@@ -118,6 +118,7 @@ export default function Menu() {
           if (type === 'Breakfast') colorClass = 'bg-amber-100 text-amber-700 border-amber-200';
           if (type === 'Lunch') colorClass = 'bg-brand-100 text-brand-700 border-brand-200';
           if (type === 'Dinner') colorClass = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+          if (type === 'Breakfast & Dinner') colorClass = 'bg-purple-100 text-purple-700 border-purple-200';
           
           return (
             <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${colorClass}`}>

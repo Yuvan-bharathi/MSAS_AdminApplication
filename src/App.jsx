@@ -12,10 +12,12 @@ import PendingReminder from './pages/PendingReminder/PendingReminder';
 import Settings from './pages/Settings/Settings';
 import Trash from './pages/Trash/Trash';
 import Menu from './pages/Menu/Menu';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />

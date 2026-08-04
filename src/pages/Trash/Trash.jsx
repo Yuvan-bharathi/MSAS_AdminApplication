@@ -13,7 +13,7 @@ export default function Trash() {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
   useEffect(() => {
-    if (clientId && role === 'Admin') {
+    if (clientId && role === 'Admin' || role === 'Super Admin') {
       fetchDeletedItems();
     }
   }, [clientId, activeTab, role]);
@@ -33,7 +33,7 @@ export default function Trash() {
         setData(orders.map(o => ({
           id: o.orderId,
           type: 'Order',
-          desc: `Order on ${o.orderDate} by ${o.users?.name}`,
+          desc: `Order for ${o.orderDate} by ${o.users?.name}`,
           amount: o.totalPrice,
           deletedAt: o.deletedAt
         })));
@@ -88,7 +88,49 @@ export default function Trash() {
         .eq(pk, id);
 
       if (error) throw error;
-      setData(prev => prev.filter(item => item.id !== id));
+
+      // If restoring an order, add the value back to the monthly bill
+      if (activeTab === 'orders') {
+        const { data: orderDetails } = await supabase
+          .from('orders')
+          .select('userId, totalPrice, orderDate, mealType')
+          .eq('orderId', id)
+          .single();
+
+        if (orderDetails) {
+          const billMonth = format(parseISO(orderDetails.orderDate), 'yyyy-MM');
+          const { data: bill } = await supabase
+            .from('monthlyBills')
+            .select('*')
+            .eq('userId', orderDetails.userId)
+            .eq('billMonth', billMonth)
+            .maybeSingle();
+
+          if (bill) {
+            const mealColumn = 
+              orderDetails.mealType === 'Breakfast' ? 'totalBreakfast' :
+              orderDetails.mealType === 'Lunch' ? 'totalLunch' :
+              orderDetails.mealType === 'Dinner' ? 'totalDinner' : null;
+
+            const updateData = {
+              subtotal: Number(bill.subtotal) + Number(orderDetails.totalPrice),
+              grandTotal: Number(bill.grandTotal) + Number(orderDetails.totalPrice),
+              totalMeals: Number(bill.totalMeals) + 1,
+            };
+            
+            if (mealColumn) {
+              updateData[mealColumn] = Number(bill[mealColumn]) + 1;
+            }
+
+            await supabase
+              .from('monthlyBills')
+              .update(updateData)
+              .eq('billId', bill.billId);
+          }
+        }
+      }
+
+      setData(prev => prev.filter(item => item !== id && item.id !== id));
     } catch (err) {
       console.error('Error restoring:', err);
     }
@@ -118,7 +160,7 @@ export default function Trash() {
     }
   };
 
-  if (role !== 'Admin') {
+  if (role !== 'Super Admin') {
     return (
       <div className="flex items-center justify-center h-[600px] text-text-secondary">
         You do not have permission to view the Trash.

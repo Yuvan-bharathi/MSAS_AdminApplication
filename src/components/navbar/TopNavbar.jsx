@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Bell, Search, LogOut, ChevronDown, Building2, Check } from 'lucide-react';
+import { Bell, Search, LogOut, ChevronDown, Building2, Check, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../utils/supabase';
 import { clearCache } from '../../utils/cache';
 
-export default function TopNavbar() {
+export default function TopNavbar({ toggleSidebar }) {
   const { user, role, clientId, setClientId, signOut } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
@@ -49,7 +49,7 @@ export default function TopNavbar() {
   };
 
   return (
-    <div className="sticky top-0 z-40 flex h-20 shrink-0 items-center gap-x-6 px-8 sm:px-10 bg-white rounded-b-3xl mx-4 mt-4 shadow-sm border border-border-subtle border-t-0">
+    <div className="sticky top-0 z-40 flex h-20 shrink-0 items-center gap-x-4 sm:gap-x-6 px-4 sm:px-10 bg-white rounded-b-3xl mx-4 mt-4 shadow-sm border border-border-subtle border-t-0">
       <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
         <form className="relative flex flex-1" action="#" method="GET">
           <label htmlFor="search-field" className="sr-only">
@@ -79,13 +79,13 @@ export default function TopNavbar() {
 
           {/* Client Switcher (Visible only for Super Admin) */}
           {role === 'Super Admin' && (
-            <div className="relative hidden md:block">
+            <div className="relative">
               <button
                 onClick={() => setIsClientSwitcherOpen(!isClientSwitcherOpen)}
                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:bg-slate-50 rounded-xl border border-transparent hover:border-border-subtle transition-all"
               >
-                <Building2 className="w-4 h-4 text-brand-500" />
-                <span className="max-w-[150px] truncate">{activeClientName}</span>
+                <Building2 className="w-4 h-4 text-brand-500 hidden sm:block" />
+                <span className="max-w-[100px] sm:max-w-[150px] truncate">{activeClientName}</span>
                 <ChevronDown className="w-4 h-4" />
               </button>
 

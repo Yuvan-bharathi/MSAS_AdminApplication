@@ -85,8 +85,10 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
           .select(`
             orderId,
             orderDate,
+            createdAt,
             totalPrice,
             orderStatus,
+            mealType,
             userId,
             users (name),
             menuItems (menuItemName)
@@ -109,7 +111,9 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
           userId: order.userId,
           user: order.users?.name || 'Unknown User',
           plan: order.menuItems?.menuItemName || 'Unknown Plan',
-          date: parseISO(order.orderDate),
+          mealType: order.mealType || '-',
+          orderedFor: parseISO(order.orderDate),
+          orderedOn: parseISO(order.createdAt),
           amount: Number(order.totalPrice),
           status: order.orderStatus
         }));
@@ -153,6 +157,16 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
     if (!orderId) return;
 
     try {
+      // 1. Fetch order details to deduct from monthly bill
+      const { data: orderDetails, error: fetchError } = await supabase
+        .from('orders')
+        .select('userId, totalPrice, orderDate, mealType')
+        .eq('orderId', orderId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+
+      // 2. Soft delete the order
       const { error } = await supabase
         .from('orders')
         .update({ deletedAt: new Date().toISOString() })
@@ -160,9 +174,41 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
         
       if (error) throw error;
       
+      // 3. Deduct from monthly bill
+      const billMonth = format(parseISO(orderDetails.orderDate), 'yyyy-MM');
+      const { data: bill } = await supabase
+        .from('monthlyBills')
+        .select('*')
+        .eq('userId', orderDetails.userId)
+        .eq('billMonth', billMonth)
+        .maybeSingle();
+
+      if (bill) {
+        const mealColumn = 
+          orderDetails.mealType === 'Breakfast' ? 'totalBreakfast' :
+          orderDetails.mealType === 'Lunch' ? 'totalLunch' :
+          orderDetails.mealType === 'Dinner' ? 'totalDinner' : null;
+
+        const updateData = {
+          subtotal: Math.max(0, Number(bill.subtotal) - Number(orderDetails.totalPrice)),
+          grandTotal: Math.max(0, Number(bill.grandTotal) - Number(orderDetails.totalPrice)),
+          totalMeals: Math.max(0, Number(bill.totalMeals) - 1),
+        };
+        
+        if (mealColumn) {
+          updateData[mealColumn] = Math.max(0, Number(bill[mealColumn]) - 1);
+        }
+
+        await supabase
+          .from('monthlyBills')
+          .update(updateData)
+          .eq('billId', bill.billId);
+      }
+
       // Remove from UI
       setData(prev => prev.filter(order => order.id !== orderId));
       clearCache('orders_');
+      setDeleteModal({ isOpen: false, orderId: null });
     } catch (err) {
       console.error('Error soft deleting order:', err);
     }
@@ -190,8 +236,23 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
           accessorKey: 'plan',
         },
         {
-          header: 'Date',
-          accessorKey: 'date',
+          header: 'Meal',
+          accessorKey: 'mealType',
+        },
+        {
+          header: 'Ordered For',
+          accessorKey: 'orderedFor',
+          cell: (info) => {
+              try {
+                  return format(info.getValue(), 'MMM dd, yyyy');
+              } catch (e) {
+                  return 'Invalid Date';
+              }
+          },
+        },
+        {
+          header: 'Ordered On',
+          accessorKey: 'orderedOn',
           cell: (info) => {
               try {
                   return format(info.getValue(), 'MMM dd, yyyy');
@@ -216,7 +277,7 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
         }
       ];
 
-      if (role === 'Admin') {
+      if (role === 'Admin' || role === 'Super Admin') {
         cols.push({
           header: 'Action',
           id: 'action',
@@ -299,6 +360,16 @@ export default function RecentOrdersTable({ clientId, title = "Recent Orders", l
           </table>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, orderId: null })}
+        onConfirm={handleSoftDelete}
+        title="Move to Trash"
+        message="Are you sure you want to move this order to the trash? You can restore it later."
+        confirmText="Move to Trash"
+        type="danger"
+      />
     </motion.div>
   );
 }

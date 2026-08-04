@@ -5,7 +5,7 @@ import AddOrderModal from '../../components/modals/AddOrderModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Orders() {
-  const { clientId } = useAuth();
+  const { clientId, lastOrderUpdate } = useAuth();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -29,7 +29,7 @@ export default function Orders() {
         limit={null} 
         title="All Orders" 
         showViewAll={false} 
-        refreshKey={refreshKey}
+        refreshKey={refreshKey + lastOrderUpdate}
       />
       
       <AddOrderModal

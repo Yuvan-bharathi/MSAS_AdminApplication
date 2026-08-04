@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
@@ -10,6 +11,9 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(null);
   const [clientId, setClientId] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Track when the last order was inserted/updated via WebSockets
+  const [lastOrderUpdate, setLastOrderUpdate] = useState(0);
 
   useEffect(() => {
     // Listen for auth changes
@@ -45,9 +49,10 @@ export function AuthProvider({ children }) {
       .from('adminUsers')
       .select('*')
       .eq('authUserId', authUserId)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
         if (error) throw error;
+        if (!data) throw new Error('No admin user found for this auth ID');
         return data;
       });
 
@@ -93,8 +98,40 @@ export function AuthProvider({ children }) {
     clientId,
     setClientId, // Exported to allow switching clients
     loading,
+    lastOrderUpdate, // Exposed so tables can automatically refetch
     signOut: () => supabase.auth.signOut(),
   };
+
+  /* 
+   * 📡 REALTIME WEBSOCKET: Listen for new orders from customers
+   */
+  useEffect(() => {
+    // Only listen if we have a resolved clientId
+    if (!clientId) return;
+
+    const channel = supabase
+      .channel('admin-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `clientId=eq.${clientId}`
+        },
+        (payload) => {
+          console.log('New order received!', payload);
+          const { mealType, quantity } = payload.new;
+          toast.success(`New order received: ${quantity}x ${mealType}!`);
+          setLastOrderUpdate(prev => prev + 1); // Trigger table refetches
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [clientId]);
 
   return (
     <AuthContext.Provider value={value}>

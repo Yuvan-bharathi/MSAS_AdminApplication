@@ -30,6 +30,20 @@
   body {
     @apply bg-bg-base text-text-primary antialiased font-sans selection:bg-brand-500 selection:text-white;
   }
+  
+  /* Tailwind v4 removes cursor-pointer by default. Restore it: */
+  button, 
+  [role="button"],
+  input[type="date"],
+  input[type="checkbox"],
+  input[type="radio"],
+  a {
+    cursor: pointer;
+  }
+  
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {

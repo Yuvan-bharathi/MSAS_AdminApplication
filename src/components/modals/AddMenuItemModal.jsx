@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save } from 'lucide-react';
+import { X, Save, ChevronDown } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { createPortal } from 'react-dom';
@@ -9,6 +9,9 @@ export default function AddMenuItemModal({ isOpen, onClose, onSuccess, editItem 
   const { clientId } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Breakfast & Dinner"];
 
   const [formData, setFormData] = useState({
     menuItemName: '',
@@ -138,18 +141,45 @@ export default function AddMenuItemModal({ isOpen, onClose, onSuccess, editItem 
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-text-primary mb-1">Meal Type</label>
-                    <select
-                      name="mealType"
-                      value={formData.mealType}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 bg-slate-50 border border-border-subtle rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all appearance-none"
+                    <div 
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 border border-border-subtle rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer"
                     >
-                      <option value="Breakfast">Breakfast</option>
-                      <option value="Lunch">Lunch</option>
-                      <option value="Dinner">Dinner</option>
-                    </select>
+                      <span className="text-text-primary">{formData.mealType}</span>
+                      <ChevronDown size={16} className={`text-text-secondary transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                    
+                    <AnimatePresence>
+                      {isDropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+                          <motion.div
+                             initial={{ opacity: 0, y: -5 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             exit={{ opacity: 0, y: -5 }}
+                             transition={{ duration: 0.15 }}
+                             className="absolute z-20 w-full mt-1.5 bg-white border border-border-subtle rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden"
+                          >
+                             {mealTypes.map(type => (
+                               <div 
+                                 key={type}
+                                 onClick={() => {
+                                   handleChange({ target: { name: 'mealType', value: type, type: 'text' } });
+                                   setIsDropdownOpen(false);
+                                 }}
+                                 className={`px-3 py-2.5 text-sm cursor-pointer transition-colors ${
+                                   formData.mealType === type ? 'bg-brand-50 text-brand-700 font-medium' : 'hover:bg-slate-50 text-text-primary'
+                                 }`}
+                               >
+                                 {type}
+                               </div>
+                             ))}
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
                   </div>
                   
                   <div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import StatCard from '../../components/cards/StatCard';
 import RevenueChart from '../../components/charts/RevenueChart';
 import DistributionChart from '../../components/charts/DistributionChart';
@@ -6,9 +7,8 @@ import RecentOrdersTable from '../../components/tables/RecentOrdersTable';
 import { ShoppingBag, DollarSign, CreditCard, CheckCircle } from 'lucide-react';
 import { supabase } from '../../utils/supabase';
 
-const CLIENT_ID = 'CLT0001';
-
 export default function Dashboard() {
+  const { clientId, lastOrderUpdate } = useAuth();
   const [stats, setStats] = useState({
     orders: 0,
     revenue: 0,
@@ -17,8 +17,10 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Re-fetch stats when the page loads OR when a new order comes in
   useEffect(() => {
     async function fetchDashboardStats() {
+      if (!clientId) return;
       try {
         const todayStr = new Date().toISOString().split('T')[0];
 
@@ -26,7 +28,7 @@ export default function Dashboard() {
         const { data: todayOrders, error: todayError } = await supabase
           .from('orders')
           .select('totalPrice')
-          .eq('clientId', CLIENT_ID)
+          .eq('clientId', clientId)
           .eq('orderDate', todayStr);
 
         if (todayError) throw todayError;
@@ -38,7 +40,7 @@ export default function Dashboard() {
         const { count: pendingCount, error: pendingError } = await supabase
           .from('payments')
           .select('*', { count: 'exact', head: true })
-          .eq('clientId', CLIENT_ID)
+          .eq('clientId', clientId)
           .eq('paymentStatus', 'Pending');
           
         if (pendingError) throw pendingError;
@@ -47,7 +49,7 @@ export default function Dashboard() {
         const { count: deliveredCount, error: deliveredError } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true })
-          .eq('clientId', CLIENT_ID)
+          .eq('clientId', clientId)
           .eq('deliveryStatus', 'Delivered');
 
         if (deliveredError) throw deliveredError;
@@ -66,7 +68,7 @@ export default function Dashboard() {
     }
 
     fetchDashboardStats();
-  }, []);
+  }, [clientId, lastOrderUpdate]);
 
   return (
     <div className="space-y-8">
@@ -118,7 +120,7 @@ export default function Dashboard() {
           <DistributionChart />
         </div>
       </div>
-      <RecentOrdersTable clientId={CLIENT_ID} limit={10} />
+      <RecentOrdersTable clientId={clientId} limit={10} refreshKey={lastOrderUpdate} />
     </div>
   );
 }
